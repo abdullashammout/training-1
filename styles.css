@@ -19,8 +19,6 @@ header {
     text-align: center;
 }
 
-
-
 main {
     padding: 2rem;
 }
@@ -58,6 +56,7 @@ main {
     display: flex;
     flex-wrap: wrap;
     gap: 20px; /* Adjust the gap between book cards */
+    justify-content: center;
 }
 
 .featured h2 {
@@ -70,7 +69,10 @@ main {
     border-radius: 4px;
     padding: 1rem;
     position: relative; /* Add position relative for positioning the image */
-    width: calc(50% - 10px); /* Calculate width for two columns with gap */
+    width: calc(100% / 3 - 20px); /* Calculate width for three columns with gap */
+    min-height: 121px;
+    border-width: 2px;
+    border-left-color: black;
 }
 
 .book-card img {
@@ -82,16 +84,52 @@ main {
     top: 0;
     right: 0; /* Position the image 30% from the right */
     max-width: 40%; /* Limit the maximum width of the image */
+    max-height: 100%;
+    display: block;
+    opacity: 1;
+    transition: opacity 0.3s ease;
+}
+.book-card:hover img {
+    opacity: 0.3;
+}
+.details-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    background-color: rgba(255, 255, 255, 0.8); /* Semi-transparent white background */
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    opacity: 0; /* Initially hidden */
+    transition: opacity 0.3s ease;
 }
 
 .book-card h3 {
     font-size: 1.5rem;
     margin-bottom: 0.5rem;
+    white-space: pre-wrap; /* Preserve whitespace and allow wrapping */
 }
 
 .book-card p {
     font-size: 1rem;
     margin-bottom: 1rem;
+    display: none;
+}
+.book-card:hover .details-overlay {
+    opacity: 1; /* Show details on hover */
+}
+.book-card:hover .details-overlay p {
+    display: block; /* Display author and pages when hovering */
+}
+.book-card:hover .details {
+    display: block;
+}
+.details-overlay p {
+    font-weight: bold;
+    padding: 0px ;
+
+    font-size: 18px;
+    text-align: center;
 }
 .book-card a.btn {
     background-color: #333;
@@ -106,12 +144,6 @@ main {
     background-color: #555;
 }
 
-.footer {
-    background: #333;
-    color: #fff;
-    text-align: center;
-    padding: 1rem;
-}
 .search-form {
     text-align: center;
     margin-bottom: 2rem;
@@ -135,6 +167,7 @@ main {
 .search-form button:hover {
     background-color: #555;
 }
+
 .pagination {
     text-align: center;
 }
@@ -159,4 +192,29 @@ main {
 .pagination ul li a.active {
     background-color: #333;
     color: #fff;
+}
+
+/* Media Query for Large Screens (Desktops) */
+@media (max-width: 1200px) {
+    .featured .book-card {
+        width: calc(50% - 20px); /* Two columns on large screens */
+    }
+}
+
+/* Media Query for Medium Screens (Tablets) */
+@media (max-width: 768px) {
+    .featured .book-card {
+        width: calc(50% - 20px); /* Two columns on tablets */
+    }
+}
+
+/* Media Query for Small Screens (Mobile Devices) */
+@media (max-width: 576px) {
+    .featured .book-card {
+        width: 100%; /* Full width on mobile devices */
+    }
+
+    .search-form input[type="text"] {
+        width: 100%; /* Full width search input on mobile devices */
+    }
 }
