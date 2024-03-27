@@ -1,4 +1,3 @@
-const url = "https://books-api7.p.rapidapi.com/books/get/random/";
 const options = {
   method: "GET",
   headers: {
@@ -7,43 +6,124 @@ const options = {
   },
 };
 
-// function to fetch random books using api
-// fetching 10 books every time called
-async function fetchBooks() {
-  try {
-    const urlParams = new URLSearchParams(window.location.search);
-    const page = parseInt(urlParams.get("page")) || 1; // Get the page number from URL, default to 1
+let currentPage = 1;
+async function fetchBooks(page, searchQuery = "") {
+  let url = `https://books-api7.p.rapidapi.com/books?p=${page}`;
 
-    const responses = await Promise.all(
-      Array.from({ length: 10 }, () => fetch(url, options))
-    );
+  // If searchQuery is provided, construct the search URL
+  if (searchQuery) {
+    // Construct regular expression for partial matches
+    const regex = new RegExp(searchQuery, "i"); // 'i' flag for case-insensitive search
+    url += `&title=${encodeURIComponent(searchQuery)}`;
 
-    const results = await Promise.all(
-      responses.map((response) => {
-        if (!response.ok) {
-          throw new Error(`Network response was not ok: ${response.status}`);
-        }
-        return response.json();
-      })
-    );
+    try {
+      const response = await fetch(url, options);
+      const books = await response.json();
 
-    const bookCards = document.querySelectorAll(".book-card");
-    var startingIndex = (page - 1) * 10 + 1;
-    results.forEach((result, index) => {
-      const bookCard = bookCards[index];
-      var counter = startingIndex + index;
-      bookCard.innerHTML = `
-          <img src="${result.cover}"/>
-          <h3>${counter}- ${result.title}</h3>
-          <p>${result.author.first_name} ${result.author.last_name} - ${result.pages} page</p>
-          <a href="${result.url}" class="btn" target="_blank">Book Now</a>
-        `;
-      counter++;
-    });
-  } catch (error) {
-    console.error(error);
+      // Filter books array based on partial title match
+      const filteredBooks = books.filter((book) => regex.test(book.title));
+
+      console.log(filteredBooks);
+      displayBooks(filteredBooks); // Call function to display filtered books
+    } catch (error) {
+      console.error(error);
+    }
+  } else {
+    // If no search query, fetch books without filtering
+    try {
+      const response = await fetch(url, options);
+      const books = await response.json();
+
+      console.log(books);
+      displayBooks(books); // Call function to display books
+    } catch (error) {
+      console.error(error);
+    }
   }
 }
+document
+  .querySelector(".search-form")
+  .addEventListener("submit", function (event) {
+    event.preventDefault();
+    const searchInput = document.querySelector('[name="search"]');
+    const searchQuery = searchInput.value.trim();
+    if (searchQuery) {
+      fetchBooks(currentPage, searchQuery);
+    }
+  });
 
-// Call the function to fetch books when the page loads
-window.onload = fetchBooks;
+function splitTitle(title) {
+  const maxLength = 15; // Maximum characters allowed for title before splitting
+  if (title.length > maxLength) {
+    // Split title into multiple lines
+    const words = title.split(" ");
+    let currentLine = "";
+    let lines = [];
+
+    for (let word of words) {
+      if ((currentLine + word).length > maxLength) {
+        lines.push(currentLine.trim());
+        currentLine = "";
+      }
+      currentLine += word + " ";
+    }
+
+    lines.push(currentLine.trim());
+    return lines.join("\n"); // Join lines with newline character
+  } else {
+    return title; // Return the original title if it's within the limit
+  }
+}
+function displayBooks(books) {
+  const featuredSection = document.querySelector(".featured");
+  featuredSection.innerHTML = ""; // Clear previous content
+
+  books.forEach((book) => {
+    const bookCard = document.createElement("div");
+    bookCard.classList.add("book-card");
+
+    const title = document.createElement("h3");
+    title.textContent = splitTitle(book.title);
+
+    const img = document.createElement("img");
+    img.src = book.cover;
+
+    const detailsOverlay = document.createElement("div");
+    detailsOverlay.classList.add("details-overlay");
+
+    const author = document.createElement("p");
+    author.textContent =
+      "Author:" + book.author.first_name + " " + book.author.last_name;
+
+    const pages = document.createElement("p");
+    pages.textContent = "Pages: " + book.pages;
+
+    const rating = document.createElement("p");
+    rating.textContent = "Rating: " + book.rating;
+
+    detailsOverlay.appendChild(author);
+    detailsOverlay.appendChild(pages);
+    detailsOverlay.appendChild(rating);
+
+    bookCard.appendChild(title);
+    bookCard.appendChild(img);
+    bookCard.appendChild(detailsOverlay);
+
+    featuredSection.appendChild(bookCard);
+  });
+}
+
+function handlePaginationClick(page) {
+  currentPage = page; // Update current page
+  fetchBooks(page);
+
+  const paginationLinks = document.querySelectorAll(".pagination a");
+  paginationLinks.forEach((link) => {
+    link.classList.remove("active");
+  });
+
+  // Add active class to the clicked pagination link
+  event.target.classList.add("active");
+}
+
+fetchBooks(currentPage);
