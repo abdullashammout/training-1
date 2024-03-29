@@ -7,48 +7,73 @@ const options = {
 };
 
 let currentPage = 1;
-async function fetchBooks(page, searchQuery = "") {
+async function fetchBooks(page) {
   let url = `https://books-api7.p.rapidapi.com/books?p=${page}`;
 
-  // If searchQuery is provided, construct the search URL
-  if (searchQuery) {
-    // Construct regular expression for partial matches
-    const regex = new RegExp(searchQuery, "i"); // 'i' flag for case-insensitive search
-    url += `&title=${encodeURIComponent(searchQuery)}`;
+  try {
+    const response = await fetch(url, options);
+    const books = await response.json();
+    console.log(response);
+    console.log(books);
+    displayBooks(books);
 
-    try {
-      const response = await fetch(url, options);
-      const books = await response.json();
-
-      // Filter books array based on partial title match
-      const filteredBooks = books.filter((book) => regex.test(book.title));
-
-      console.log(filteredBooks);
-      displayBooks(filteredBooks); // Call function to display filtered books
-    } catch (error) {
-      console.error(error);
-    }
-  } else {
-    // If no search query, fetch books without filtering
-    try {
-      const response = await fetch(url, options);
-      const books = await response.json();
-
-      console.log(books);
-      displayBooks(books); // Call function to display books
-    } catch (error) {
-      console.error(error);
-    }
+    // Update pagination
+    updatePagination(8, page); // Update pagination links
+    const paginationLinks = document.querySelectorAll(".pagination a");
+    paginationLinks.forEach((link) => {
+      if (parseInt(link.textContent) === page) {
+        link.classList.add("active");
+      } else {
+        link.classList.remove("active");
+      }
+    });
+  } catch (error) {
+    console.error(error);
   }
 }
+
+async function filterBooks(page, searchQuery) {
+  try {
+    let allBooks = [];
+
+    // Fetch all pages of books
+    for (let page = 1; ; page++) {
+      const response = await fetch(
+        `https://books-api7.p.rapidapi.com/books?p=${page}`,
+        options
+      );
+      const books = await response.json();
+
+      if (books.length === 0) {
+        // No more books to fetch
+        break;
+      }
+
+      allBooks = allBooks.concat(books);
+    }
+
+    // Filter books based on searchQuery
+    const filteredBooks = allBooks.filter((book) => {
+      return book.title.toLowerCase().includes(searchQuery.toLowerCase());
+    });
+
+    console.log(filteredBooks);
+    displayBooks(filteredBooks);
+  } catch (error) {
+    console.error(error);
+  }
+}
+
 document
   .querySelector(".search-form")
   .addEventListener("submit", function (event) {
     event.preventDefault();
     const searchInput = document.querySelector('[name="search"]');
-    const searchQuery = searchInput.value.trim();
+    const searchQuery = searchInput.value.trim().toLowerCase();
     if (searchQuery) {
-      fetchBooks(currentPage, searchQuery);
+      filterBooks(currentPage, searchQuery);
+    } else {
+      fetchBooks(currentPage);
     }
   });
 
@@ -113,14 +138,75 @@ function displayBooks(books) {
   });
 }
 
-function handlePaginationClick(page) {
-  currentPage = page; // Update current page
-  fetchBooks(page);
+function updatePagination(totalPages, currentPage) {
+  const paginationContainer = document.querySelector(".pagination ul");
+  paginationContainer.innerHTML = ""; // Clear existing pagination links
 
-  const paginationLinks = document.querySelectorAll(".pagination a");
-  paginationLinks.forEach((link) => {
-    link.classList.remove("active");
-  });
+  // Previous Button
+  const previousPageLink = document.createElement("a");
+  previousPageLink.href = "#";
+  previousPageLink.textContent = "<";
+  previousPageLink.onclick = function (event) {
+    event.preventDefault(); // Prevent default link behavior
+    if (currentPage > 1) {
+      handlePaginationClick(currentPage - 1);
+    }
+  };
+  const previousListItem = document.createElement("li");
+  previousListItem.appendChild(previousPageLink);
+  if (currentPage === 1) {
+    previousPageLink.classList.add("disabled"); // Disable previous button on first page
+  }
+  paginationContainer.appendChild(previousListItem);
+
+  // Page Numbers
+  const startPage = Math.max(1, currentPage - 2); // Start page number
+  const endPage = Math.min(totalPages, startPage + 4); // End page number
+  for (let i = startPage; i <= endPage; i++) {
+    const pageLink = document.createElement("a");
+    pageLink.href = "#";
+    pageLink.textContent = i;
+    pageLink.onclick = function (event) {
+      event.preventDefault(); // Prevent default link behavior
+      handlePaginationClick(i);
+    };
+
+    const listItem = document.createElement("li");
+    if (i === currentPage) {
+      listItem.classList.add("active"); // Add active class to current page
+    }
+    listItem.appendChild(pageLink);
+    paginationContainer.appendChild(listItem);
+  }
+
+  // Next Button
+  const nextPageLink = document.createElement("a");
+  nextPageLink.href = "#";
+  nextPageLink.textContent = ">";
+  nextPageLink.onclick = function (event) {
+    event.preventDefault(); // Prevent default link behavior
+    if (currentPage < totalPages) {
+      handlePaginationClick(currentPage + 1);
+    }
+  };
+  const nextListItem = document.createElement("li");
+  nextListItem.appendChild(nextPageLink);
+  if (currentPage === totalPages) {
+    nextPageLink.classList.add("disabled"); // Disable next button on last page
+  }
+  paginationContainer.appendChild(nextListItem);
+}
+
+function handlePaginationClick(page) {
+  // Remove active class from previously active pagination link
+  const activeLink = document.querySelector(".pagination a.active");
+  if (activeLink) {
+    activeLink.classList.remove("active");
+  }
+
+  // Update current page
+  currentPage = page;
+  fetchBooks(page);
 
   // Add active class to the clicked pagination link
   event.target.classList.add("active");
