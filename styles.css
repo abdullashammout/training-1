@@ -96,12 +96,24 @@ main {
     position: absolute;
     top: 0;
     left: 0;
-    background-color: rgba(255, 255, 255, 0.8); /* Semi-transparent white background */
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.7); /* Semi-transparent black background */
     display: flex;
-    flex-direction: column;
-    align-items: flex-start;
+    flex-direction: column; /* Align details vertically */
+    align-items: center;
+    justify-content: center;
     opacity: 0; /* Initially hidden */
     transition: opacity 0.3s ease;
+}
+
+.details-overlay p {
+    font-weight: bold;
+    color: white;
+    padding: 5px; /* Add padding to details */
+    font-size: 16px;
+    text-align: center;
+    margin: 5px 0; /* Add margin for spacing between details */
 }
 
 .book-card h3 {
@@ -110,11 +122,7 @@ main {
     white-space: pre-wrap; /* Preserve whitespace and allow wrapping */
 }
 
-.book-card p {
-    font-size: 1rem;
-    margin-bottom: 1rem;
-    display: none;
-}
+
 .book-card:hover .details-overlay {
     opacity: 1; /* Show details on hover */
 }
@@ -123,13 +131,6 @@ main {
 }
 .book-card:hover .details {
     display: block;
-}
-.details-overlay p {
-    font-weight: bold;
-    padding: 0px ;
-
-    font-size: 18px;
-    text-align: center;
 }
 .book-card a.btn {
     background-color: #333;
